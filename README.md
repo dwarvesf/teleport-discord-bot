@@ -26,7 +26,7 @@ Create a `.env` file or set the following environment variables:
 - `PROXY_ADDR`: Teleport proxy address (e.g., `teleport.example.com:443`)
 - `DISCORD_WEBHOOK_URL`: Discord webhook URL for notifications
 - `WATCHER_LIST`: Command to list watchers (used in notification messages)
-- `AUTH_PEM_PATH`: Path to Teleport authentication credentials file
+- `AUTH_PEM`: base64-encoded Teleport authentication credentials (auth.pem)
 
 ## Installation
 
