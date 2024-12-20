@@ -51,8 +51,7 @@ deps:
 # Run the application locally
 .PHONY: run
 run:
-	$(GOBUILD) -o $(BINARY_NAME) $(MAIN_PATH)
-	./$(BINARY_NAME)
+	go run $(MAIN_PATH)/main.go
 
 # Development setup
 .PHONY: setup

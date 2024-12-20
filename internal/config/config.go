@@ -12,7 +12,7 @@ type Config struct {
 	ProxyAddr         string
 	DiscordWebhookURL string
 	WatcherList       string
-	AuthPemPath       string
+	AuthPem           string
 }
 
 // Load reads configuration from environment variables
@@ -26,7 +26,7 @@ func Load() (*Config, error) {
 		ProxyAddr:         os.Getenv("PROXY_ADDR"),
 		DiscordWebhookURL: os.Getenv("DISCORD_WEBHOOK_URL"),
 		WatcherList:       os.Getenv("WATCHER_LIST"),
-		AuthPemPath:       os.Getenv("AUTH_PEM_PATH"),
+		AuthPem:           os.Getenv("AUTH_PEM"),
 	}
 
 	// Validate required configuration
@@ -36,8 +36,8 @@ func Load() (*Config, error) {
 	if cfg.DiscordWebhookURL == "" {
 		return nil, fmt.Errorf("DISCORD_WEBHOOK_URL is required")
 	}
-	if cfg.AuthPemPath == "" {
-		return nil, fmt.Errorf("AUTH_PEM_PATH is required")
+	if cfg.AuthPem == "" {
+		return nil, fmt.Errorf("AUTH_PEM is required")
 	}
 
 	return cfg, nil
