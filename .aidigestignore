@@ -1,0 +1,5 @@
+.github/*
+.env*
+go.*
+*.md
+*.pem
