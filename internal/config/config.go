@@ -13,6 +13,7 @@ type Config struct {
 	DiscordWebhookURL string
 	WatcherList       string
 	AuthPem           string
+	Port              string
 }
 
 // Load reads configuration from environment variables
@@ -27,6 +28,10 @@ func Load() (*Config, error) {
 		DiscordWebhookURL: os.Getenv("DISCORD_WEBHOOK_URL"),
 		WatcherList:       os.Getenv("WATCHER_LIST"),
 		AuthPem:           os.Getenv("AUTH_PEM"),
+		Port:              "8080",
+	}
+	if os.Getenv("PORT") != "" {
+		cfg.Port = os.Getenv("PORT")
 	}
 
 	// Validate required configuration

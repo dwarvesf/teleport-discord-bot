@@ -2,6 +2,7 @@ package teleport
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/gravitational/teleport/api/client"
@@ -29,17 +30,16 @@ type Plugin struct {
 func NewPlugin(cfg *config.Config, eventHandler EventHandler) (*Plugin, error) {
 	ctx := context.Background()
 
-	// content, err := base64.StdEncoding.DecodeString(cfg.AuthPem)
-	// if err != nil {
-	// 	return nil, trace.Wrap(err, "failed to decode pem file")
-	// }
+	content, err := base64.StdEncoding.DecodeString(cfg.AuthPem)
+	if err != nil {
+		return nil, trace.Wrap(err, "failed to decode pem file")
+	}
 
 	// Create a new Teleport client
 	teleportClient, err := client.New(ctx, client.Config{
 		Addrs: []string{cfg.ProxyAddr},
 		Credentials: []client.Credentials{
-			client.LoadIdentityFile(cfg.AuthPem),
-			// client.LoadIdentityFileFromString(string(content)),
+			client.LoadIdentityFileFromString(string(content)),
 		},
 		DialOpts: []grpc.DialOption{
 			grpc.WithReturnConnectionError(),
