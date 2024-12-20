@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a Teleport Access Request plugin that sends notifications to a Discord webhook when access requests are created, approved, or denied.
+A Teleport plugin that sends real-time Discord webhook notifications for access requests, providing instant visibility into access management events.
 
 ## Features
 
@@ -21,51 +21,69 @@ This is a Teleport Access Request plugin that sends notifications to a Discord w
 
 ## Configuration
 
-Create a `.env` file or set the following environment variables:
+Create a `.env` file with the following environment variables:
 
-- `PROXY_ADDR`: Teleport proxy address (e.g., `teleport.example.com:443`)
-- `DISCORD_WEBHOOK_URL`: Discord webhook URL for notifications
-- `WATCHER_LIST`: Command to list watchers (used in notification messages)
-- `AUTH_PEM`: base64-encoded Teleport authentication credentials (auth.pem)
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `PROXY_ADDR` | Teleport proxy address | `teleport.example.com:443` |
+| `DISCORD_WEBHOOK_URL` | Discord webhook URL for notifications | `https://discord.com/api/webhooks/...` |
+| `WATCHER_LIST` | Command to list watchers | `tctl` |
+| `AUTH_PEM` | Base64-encoded Teleport authentication credentials | `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVkt...` |
 
 ## Installation
 
 1. Clone the repository
-2. Copy `.env.example` to `.env` and fill in your configuration
+2. Copy `.env.example` to `.env` and configure your settings
 3. Build the application:
    ```bash
-   go build -o github.com/dwarvesf/teleport-discord-bot ./cmd/github.com/dwarvesf/teleport-discord-bot
+   make build
    ```
 
 ## Running the Application
 
 ```bash
-./github.com/dwarvesf/teleport-discord-bot
+make run
 ```
+
+## Development
+
+### Setup Development Environment
+
+```bash
+make setup
+```
+
+### Available Make Targets
+
+- `make build`: Compile the application
+- `make test`: Run tests
+- `make lint`: Run code linters
+- `make run`: Build and run the application
+- `make help`: Show all available commands
 
 ## Project Structure
 
 ```
-github.com/dwarvesf/teleport-discord-bot/
+teleport-discord-bot/
 ├── cmd/
-│   └── github.com/dwarvesf/teleport-discord-bot/
+│   └── teleport-discord-bot/
 │       └── main.go          # Application entry point
 ├── internal/
-│   ├── config/
-│   │   └── config.go        # Configuration management
-│   ├── discord/
-│   │   └── client.go        # Discord webhook client
-│   ├── teleport/
-│   │   └── plugin.go        # Teleport event monitoring
-│   └── watcher/
-│       └── watcher.go       # Event watching utilities
+│   ├── config/               # Configuration management
+│   ├── discord/              # Discord webhook client
+│   ├── teleport/             # Teleport event monitoring
 ├── go.mod
 └── README.md
 ```
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please follow these steps:
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
 
 ## License
 
