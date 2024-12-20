@@ -1,6 +1,6 @@
 module github.com/dwarvesf/teleport-discord-bot
 
-go 1.21
+go 1.23
 
 require (
 	github.com/bwmarrin/discordgo v0.28.1
