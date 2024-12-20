@@ -9,6 +9,7 @@ import (
 
 	"github.com/dwarvesf/teleport-discord-bot/internal/config"
 	"github.com/dwarvesf/teleport-discord-bot/internal/discord"
+	"github.com/dwarvesf/teleport-discord-bot/internal/httpserver"
 	"github.com/dwarvesf/teleport-discord-bot/internal/teleport"
 )
 
@@ -19,6 +20,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to load configuration: %v\n", err)
 		os.Exit(1)
 	}
+
+	// Create HTTP server
+	httpServer := httpserver.NewServer(cfg.Port)
+	defer func() {
+		if shutdownErr := httpServer.Shutdown(context.Background()); shutdownErr != nil {
+			fmt.Fprintf(os.Stderr, "Error shutting down HTTP server: %v\n", shutdownErr)
+		}
+	}()
 
 	// Create Discord client
 	discordClient := discord.NewClient(cfg)
@@ -44,6 +53,12 @@ func main() {
 	go func() {
 		errChan <- plugin.Run(ctx)
 	}()
+
+	// Start the HTTP server
+	if err := httpServer.Start(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to start HTTP server: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Wait for either a signal or an error
 	select {
