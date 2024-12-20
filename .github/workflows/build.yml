@@ -11,10 +11,9 @@ on:
       - develop
 
 env:
-  GCP_PROJECT_ID: nghe-nhan-trading
+  GCP_PROJECT_ID: <project-id>
   GCP_REGION: asia-southeast1-b
   IMAGE: teleport-discord-bot/teleport-discord-bot
-  K8S_ENVIRONMENT: dev
 
 jobs:
   build-and-test:
