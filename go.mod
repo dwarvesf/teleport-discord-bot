@@ -1,4 +1,4 @@
-module teleport-sheets
+module github.com/dwarvesf/teleport-discord-bot
 
 go 1.21
 

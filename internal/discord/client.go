@@ -1,33 +1,46 @@
-package main
+package discord
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/dwarvesf/teleport-discord-bot/internal/config"
 	"github.com/gravitational/teleport/api/types"
 	"github.com/gtuk/discordwebhook"
 )
 
-func (d *discordClient) sendWebhookNotification(message discordwebhook.Message) error {
-	// Send the webhook
-	err := discordwebhook.SendMessage(d.url, message)
-	if err != nil {
-		return err
-	}
-
-	return nil
+// Client handles Discord webhook notifications
+type Client struct {
+	url string
+	cfg *config.Config
 }
 
+// NewClient creates a new Discord webhook client
+func NewClient(cfg *config.Config) *Client {
+	return &Client{
+		url: cfg.DiscordWebhookURL,
+		cfg: cfg,
+	}
+}
+
+// sendWebhookNotification sends a message to the configured Discord webhook
+func (d *Client) sendWebhookNotification(message discordwebhook.Message) error {
+	return discordwebhook.SendMessage(d.url, message)
+}
+
+// ptrString is a helper to convert string to pointer
 func ptrString(s string) *string {
 	return &s
 }
 
+// ptrBool is a helper to convert bool to pointer
 func ptrBool(b bool) *bool {
 	return &b
 }
 
-func (d *discordClient) handleNewAccessRequest(r types.AccessRequest) error {
+// HandleNewAccessRequest creates a notification for a new access request
+func (d *Client) HandleNewAccessRequest(r types.AccessRequest) error {
 	fields := []discordwebhook.Field{
 		{
 			Name:   ptrString("Request ID"),
@@ -61,7 +74,7 @@ func (d *discordClient) handleNewAccessRequest(r types.AccessRequest) error {
 
 	embed := discordwebhook.Embed{
 		Title:       ptrString("New Access Request"),
-		Description: ptrString(fmt.Sprintf("Approve request by running command %s: ```tctl requests approve %s```", d.cfg.watcherList, r.GetName())),
+		Description: ptrString(fmt.Sprintf("Approve request by running command %s: ```tctl requests approve %s```", d.cfg.WatcherList, r.GetName())),
 		Color:       ptrString("3093206"),
 		Fields:      &fields,
 	}
@@ -70,17 +83,15 @@ func (d *discordClient) handleNewAccessRequest(r types.AccessRequest) error {
 		Embeds: &[]discordwebhook.Embed{embed},
 	}
 
-	err := d.sendWebhookNotification(message)
-	if err != nil {
-		fmt.Printf("Error sending notification: %v\n", err)
-		return err
+	if err := d.sendWebhookNotification(message); err != nil {
+		return fmt.Errorf("failed to send new access request notification: %w", err)
 	}
-	fmt.Println("Notification sent successfully!")
 
 	return nil
 }
 
-func (d *discordClient) handleApproveAccessRequest(r types.AccessRequest) error {
+// HandleApproveAccessRequest creates a notification for an approved access request
+func (d *Client) HandleApproveAccessRequest(r types.AccessRequest) error {
 	embed := discordwebhook.Embed{
 		Title: ptrString("Access Request Approved"),
 		Color: ptrString("2021216"),
@@ -107,17 +118,15 @@ func (d *discordClient) handleApproveAccessRequest(r types.AccessRequest) error 
 		Embeds: &[]discordwebhook.Embed{embed},
 	}
 
-	err := d.sendWebhookNotification(message)
-	if err != nil {
-		fmt.Printf("Error sending notification: %v\n", err)
-		return err
+	if err := d.sendWebhookNotification(message); err != nil {
+		return fmt.Errorf("failed to send access request approval notification: %w", err)
 	}
-	fmt.Println("Notification sent successfully!")
 
 	return nil
 }
 
-func (d *discordClient) handleDenyAccessRequest(r types.AccessRequest) error {
+// HandleDenyAccessRequest creates a notification for a denied access request
+func (d *Client) HandleDenyAccessRequest(r types.AccessRequest) error {
 	embed := discordwebhook.Embed{
 		Title: ptrString("Access Request Denied"),
 		Color: ptrString("15158332"),
@@ -149,12 +158,9 @@ func (d *discordClient) handleDenyAccessRequest(r types.AccessRequest) error {
 		Embeds: &[]discordwebhook.Embed{embed},
 	}
 
-	err := d.sendWebhookNotification(message)
-	if err != nil {
-		fmt.Printf("Error sending notification: %v\n", err)
-		return err
+	if err := d.sendWebhookNotification(message); err != nil {
+		return fmt.Errorf("failed to send access request denial notification: %w", err)
 	}
-	fmt.Println("Notification sent successfully!")
 
 	return nil
 }
