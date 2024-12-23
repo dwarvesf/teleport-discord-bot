@@ -10,6 +10,7 @@ import (
 	"github.com/dwarvesf/teleport-discord-bot/internal/config"
 	"github.com/dwarvesf/teleport-discord-bot/internal/discord"
 	"github.com/dwarvesf/teleport-discord-bot/internal/httpserver"
+	repo "github.com/dwarvesf/teleport-discord-bot/internal/repository"
 	"github.com/dwarvesf/teleport-discord-bot/internal/teleport"
 )
 
@@ -20,6 +21,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to load configuration: %v\n", err)
 		os.Exit(1)
 	}
+
+	repo.ConnectDatabase()
 
 	// Create HTTP server
 	httpServer := httpserver.NewServer(cfg.Port)
