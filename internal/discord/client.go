@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/dwarvesf/teleport-discord-bot/internal/config"
+	repo "github.com/dwarvesf/teleport-discord-bot/internal/repository"
+
 	"github.com/gravitational/teleport/api/types"
 	"github.com/gtuk/discordwebhook"
 )
@@ -41,6 +43,23 @@ func ptrBool(b bool) *bool {
 
 // HandleNewAccessRequest creates a notification for a new access request
 func (d *Client) HandleNewAccessRequest(r types.AccessRequest) error {
+	approverIDs := ""
+	approvers, err := repo.GetApprovers()
+	if err != nil {
+		fmt.Printf("Failed to get approvers: %v\n", err)
+	} else {
+		for _, a := range approvers {
+			approverIDs += fmt.Sprintf("<@%s> ", a.DiscordID)
+		}
+	}
+
+	requester := r.GetUser()
+
+	dbRequester, err := repo.GetUserByTlpUsername(requester)
+	if err == nil {
+		requester = dbRequester.DiscordName
+	}
+
 	fields := []discordwebhook.Field{
 		{
 			Name:   ptrString("Request ID"),
@@ -48,8 +67,8 @@ func (d *Client) HandleNewAccessRequest(r types.AccessRequest) error {
 			Inline: ptrBool(false),
 		},
 		{
-			Name:   ptrString("User"),
-			Value:  ptrString(r.GetUser()),
+			Name:   ptrString("Requester"),
+			Value:  ptrString(requester),
 			Inline: ptrBool(true),
 		},
 		{
@@ -58,7 +77,7 @@ func (d *Client) HandleNewAccessRequest(r types.AccessRequest) error {
 			Inline: ptrBool(true),
 		},
 		{
-			Name:   ptrString("Session TTL"),
+			Name:   ptrString("Duration"),
 			Value:  ptrString(r.GetSessionTLL().Sub(r.GetCreationTime()).Round(time.Second).String()),
 			Inline: ptrBool(true),
 		},
@@ -66,21 +85,22 @@ func (d *Client) HandleNewAccessRequest(r types.AccessRequest) error {
 
 	if r.GetRequestReason() != "" {
 		fields = append(fields, discordwebhook.Field{
-			Name:   ptrString("Request Reason"),
+			Name:   ptrString("Reason"),
 			Value:  ptrString(r.GetRequestReason()),
 			Inline: ptrBool(false),
 		})
 	}
 
 	embed := discordwebhook.Embed{
-		Title:       ptrString("New Access Request"),
-		Description: ptrString(fmt.Sprintf("Approve request by running command %s: ```tctl requests approve %s```", d.cfg.WatcherList, r.GetName())),
+		Title:       ptrString("New access request"),
+		Description: ptrString(fmt.Sprintf("Approve request by running command: ```tctl requests approve %s```", r.GetName())),
 		Color:       ptrString("3093206"),
 		Fields:      &fields,
 	}
 
 	message := discordwebhook.Message{
-		Embeds: &[]discordwebhook.Embed{embed},
+		Embeds:  &[]discordwebhook.Embed{embed},
+		Content: ptrString(approverIDs),
 	}
 
 	if err := d.sendWebhookNotification(message); err != nil {
@@ -92,9 +112,17 @@ func (d *Client) HandleNewAccessRequest(r types.AccessRequest) error {
 
 // HandleApproveAccessRequest creates a notification for an approved access request
 func (d *Client) HandleApproveAccessRequest(r types.AccessRequest) error {
+	requester := r.GetUser()
+
+	dbRequester, err := repo.GetUserByTlpUsername(requester)
+	if err == nil {
+		requester = dbRequester.DiscordName
+	}
+
 	embed := discordwebhook.Embed{
-		Title: ptrString("Access Request Approved"),
-		Color: ptrString("2021216"),
+		Title:       ptrString("Access request approved"),
+		Description: ptrString(fmt.Sprintf("Locking user by running command: ```tctl lock --user=%s --message=\"block reason\" --ttl=1h```", r.GetUser())),
+		Color:       ptrString("2021216"),
 		Fields: &[]discordwebhook.Field{
 			{
 				Name:   ptrString("Request ID"),
@@ -102,8 +130,8 @@ func (d *Client) HandleApproveAccessRequest(r types.AccessRequest) error {
 				Inline: ptrBool(false),
 			},
 			{
-				Name:   ptrString("User"),
-				Value:  ptrString(r.GetUser()),
+				Name:   ptrString("Requester"),
+				Value:  ptrString(requester),
 				Inline: ptrBool(true),
 			},
 			{
@@ -127,8 +155,15 @@ func (d *Client) HandleApproveAccessRequest(r types.AccessRequest) error {
 
 // HandleDenyAccessRequest creates a notification for a denied access request
 func (d *Client) HandleDenyAccessRequest(r types.AccessRequest) error {
+	requester := r.GetUser()
+
+	dbRequester, err := repo.GetUserByTlpUsername(requester)
+	if err == nil {
+		requester = dbRequester.DiscordName
+	}
+
 	embed := discordwebhook.Embed{
-		Title: ptrString("Access Request Denied"),
+		Title: ptrString("Access request denied"),
 		Color: ptrString("15158332"),
 		Fields: &[]discordwebhook.Field{
 			{
@@ -137,8 +172,8 @@ func (d *Client) HandleDenyAccessRequest(r types.AccessRequest) error {
 				Inline: ptrBool(false),
 			},
 			{
-				Name:   ptrString("User"),
-				Value:  ptrString(r.GetUser()),
+				Name:   ptrString("Requester"),
+				Value:  ptrString(requester),
 				Inline: ptrBool(true),
 			},
 			{
