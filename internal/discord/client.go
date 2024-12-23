@@ -49,7 +49,9 @@ func (d *Client) HandleNewAccessRequest(r types.AccessRequest) error {
 		fmt.Printf("Failed to get approvers: %v\n", err)
 	} else {
 		for _, a := range approvers {
-			approverIDs += fmt.Sprintf("<@%s> ", a.DiscordID)
+			if a.TlpUsername != r.GetUser() {
+				approverIDs += fmt.Sprintf("<@%s> ", a.DiscordID)
+			}
 		}
 	}
 
@@ -57,7 +59,7 @@ func (d *Client) HandleNewAccessRequest(r types.AccessRequest) error {
 
 	dbRequester, err := repo.GetUserByTlpUsername(requester)
 	if err == nil {
-		requester = dbRequester.DiscordName
+		requester = fmt.Sprintf("<@%s>", dbRequester.DiscordID)
 	}
 
 	fields := []discordwebhook.Field{
@@ -116,7 +118,7 @@ func (d *Client) HandleApproveAccessRequest(r types.AccessRequest) error {
 
 	dbRequester, err := repo.GetUserByTlpUsername(requester)
 	if err == nil {
-		requester = dbRequester.DiscordName
+		requester = fmt.Sprintf("<@%s>", dbRequester.DiscordID)
 	}
 
 	embed := discordwebhook.Embed{
@@ -159,7 +161,7 @@ func (d *Client) HandleDenyAccessRequest(r types.AccessRequest) error {
 
 	dbRequester, err := repo.GetUserByTlpUsername(requester)
 	if err == nil {
-		requester = dbRequester.DiscordName
+		requester = fmt.Sprintf("<@%s>", dbRequester.DiscordID)
 	}
 
 	embed := discordwebhook.Embed{
