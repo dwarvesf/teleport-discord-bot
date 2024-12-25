@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -28,6 +29,9 @@ func NewServer(port string) *Server {
 	// Add healthz endpoint
 	mux.HandleFunc("/healthz", s.healthzHandler)
 
+	// Add event log endpoint
+	mux.HandleFunc("/events.log", s.eventLogHandler)
+
 	return s
 }
 
@@ -35,6 +39,42 @@ func NewServer(port string) *Server {
 func (s *Server) healthzHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
+}
+
+// EventLogBody represents the structure of a Fluentd-like event log payload
+type EventLogBody struct {
+	Tag    string                 `json:"tag"`
+	Time   float64                `json:"time"`
+	Record map[string]interface{} `json:"record"`
+}
+
+func (s *Server) eventLogHandler(w http.ResponseWriter, r *http.Request) {
+	// Ensure only POST method is accepted
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Decode JSON body
+	var body EventLogBody
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Print out the event log details in a structured format
+	fmt.Printf("Fluentd Event Log Received:\n")
+	fmt.Printf("Tag: %s\n", body.Tag)
+	fmt.Printf("Timestamp: %f\n", body.Time)
+	fmt.Println("Record:")
+	for key, value := range body.Record {
+		fmt.Printf("  %s: %v\n", key, value)
+	}
+
+	// Respond with success
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Event log received successfully"))
 }
 
 // Start starts the HTTP server in a separate goroutine
