@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/dwarvesf/teleport-discord-bot/internal/config"
 	"github.com/dwarvesf/teleport-discord-bot/internal/discord"
@@ -24,16 +25,15 @@ func main() {
 
 	repo.ConnectDatabase()
 
-	// Create HTTP server
-	httpServer := httpserver.NewServer(cfg.Port)
-	defer func() {
-		if shutdownErr := httpServer.Shutdown(context.Background()); shutdownErr != nil {
-			fmt.Fprintf(os.Stderr, "Error shutting down HTTP server: %v\n", shutdownErr)
-		}
-	}()
+	// Create a context that can be cancelled
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// Create Discord client
 	discordClient := discord.NewClient(cfg)
+
+	// Create HTTP server with Discord client
+	httpServer := httpserver.NewServer(cfg.Port, discordClient)
 
 	// Create Teleport plugin
 	plugin, err := teleport.NewPlugin(cfg, discordClient)
@@ -41,20 +41,39 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to create Teleport plugin: %v\n", err)
 		os.Exit(1)
 	}
-	defer plugin.Close()
-
-	// Create a context that can be cancelled
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	// Set up signal handling for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	// Graceful shutdown function
+	gracefulShutdown := func() {
+		fmt.Println("Initiating graceful shutdown...")
+
+		// Cancel context to stop ongoing operations
+		cancel()
+
+		// Shutdown HTTP server
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutdownCancel()
+
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			fmt.Fprintf(os.Stderr, "Error shutting down HTTP server: %v\n", err)
+		}
+
+		// Close Teleport plugin
+		plugin.Close()
+
+		fmt.Println("Teleport Discord bot shutdown complete")
+		os.Exit(0)
+	}
+
 	// Run the plugin in a separate goroutine
-	errChan := make(chan error, 1)
 	go func() {
-		errChan <- plugin.Run(ctx)
+		if err := plugin.Run(ctx); err != nil {
+			fmt.Fprintf(os.Stderr, "Plugin error: %v\n", err)
+			gracefulShutdown()
+		}
 	}()
 
 	// Start the HTTP server
@@ -63,19 +82,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Wait for either a signal or an error
-	select {
-	case sig := <-sigChan:
-		fmt.Printf("Received signal %v, shutting down...\n", sig)
-		cancel()
-	case err := <-errChan:
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Plugin error: %v\n", err)
-			os.Exit(1)
-		}
-	}
-
-	// Wait for the plugin to finish
-	<-errChan
-	fmt.Println("Teleport Discord bot shutdown complete")
+	// Wait for interrupt signal
+	<-sigChan
+	gracefulShutdown()
 }

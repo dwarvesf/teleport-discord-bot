@@ -26,7 +26,6 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		ProxyAddr:         os.Getenv("PROXY_ADDR"),
 		DiscordWebhookURL: os.Getenv("DISCORD_WEBHOOK_URL"),
-		WatcherList:       os.Getenv("WATCHER_LIST"),
 		AuthPem:           os.Getenv("AUTH_PEM"),
 		Port:              "8080",
 	}

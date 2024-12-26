@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dwarvesf/teleport-discord-bot/internal/config"
-	repo "github.com/dwarvesf/teleport-discord-bot/internal/repository"
-
 	"github.com/gravitational/teleport/api/types"
 	"github.com/gtuk/discordwebhook"
+
+	"github.com/dwarvesf/teleport-discord-bot/internal/config"
+	repo "github.com/dwarvesf/teleport-discord-bot/internal/repository"
 )
 
 // Client handles Discord webhook notifications
@@ -26,8 +26,8 @@ func NewClient(cfg *config.Config) *Client {
 	}
 }
 
-// sendWebhookNotification sends a message to the configured Discord webhook
-func (d *Client) sendWebhookNotification(message discordwebhook.Message) error {
+// SendWebhookNotification sends a message to the configured Discord webhook
+func (d *Client) SendWebhookNotification(message discordwebhook.Message) error {
 	return discordwebhook.SendMessage(d.url, message)
 }
 
@@ -105,7 +105,7 @@ func (d *Client) HandleNewAccessRequest(r types.AccessRequest) error {
 		Content: ptrString(approverIDs),
 	}
 
-	if err := d.sendWebhookNotification(message); err != nil {
+	if err := d.SendWebhookNotification(message); err != nil {
 		return fmt.Errorf("failed to send new access request notification: %w", err)
 	}
 
@@ -148,7 +148,7 @@ func (d *Client) HandleApproveAccessRequest(r types.AccessRequest) error {
 		Embeds: &[]discordwebhook.Embed{embed},
 	}
 
-	if err := d.sendWebhookNotification(message); err != nil {
+	if err := d.SendWebhookNotification(message); err != nil {
 		return fmt.Errorf("failed to send access request approval notification: %w", err)
 	}
 
@@ -195,7 +195,7 @@ func (d *Client) HandleDenyAccessRequest(r types.AccessRequest) error {
 		Embeds: &[]discordwebhook.Embed{embed},
 	}
 
-	if err := d.sendWebhookNotification(message); err != nil {
+	if err := d.SendWebhookNotification(message); err != nil {
 		return fmt.Errorf("failed to send access request denial notification: %w", err)
 	}
 
